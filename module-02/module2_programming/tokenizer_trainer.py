@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 """
 Your assignment is to implement BPE in the following method. You can add
@@ -26,7 +26,7 @@ have not covered these yet.
 """
 
 def train_tokenizer(
-    txt_file: str, vocabulary_size: int, base_vocabulary: List[str]
+    txt_file: str, vocab_size: int, base_vocabulary: List[str]
 ) -> None:
     """
     Trains a GPT-style tokenizer.
@@ -34,21 +34,31 @@ def train_tokenizer(
     Arguments:
         txt_file:        A string path to a text file of
                          data (i.e., `./data.txt`).
-        vocabulary_size: Integer specifying the final vocab size.
+        vocab_size:      Integer specifying the final vocab size.
         base_vocabulary: List of strings to add to the vocabulary
                          by default.
     Return Values:
         None (writes two files: `./vocab.txt` and `./merges.json`)
     """
-    with open(txt_file, 'r') as file:
-        corpus = file.readlines()[0]
+    with open(txt_file, 'r') as corpus_file:
+        corpus = corpus_file.readlines()[0]
         # corpus = file.read() # TODO: Re-implement for full corpus
     corpus_tokens = split_corpus_into_characters(corpus)
 
     merges = []
     vocabulary = initialize_vocabulary(base_vocabulary)
-    while len(vocabulary) < vocabulary_size:
-        corpus_token_counts = get_corpus_token_counts(corpus_tokens)
+    while len(vocabulary) < vocab_size:
+        corpus_pair_counts = get_corpus_pair_counts(corpus_tokens)
+        most_common_pair = max(corpus_pair_counts, key=corpus_pair_counts.get)
+        merges.append(most_common_pair)
+        vocabulary.append(''.join(most_common_pair))
+        corpus_tokens = update_corpus_with_pair(corpus_tokens, most_common_pair)
+    
+    with open('vocab.txt', 'w') as vocab_file:
+        for token in vocabulary:
+            vocab_file.write(f'{token}\n')
+    with open('merges.json', 'w') as merges_file:
+        json.dump(merges, merges_file)
 
 def split_corpus_into_characters(corpus: str) -> List[str]:
     """
@@ -100,47 +110,78 @@ def initialize_vocabulary(base_vocab: str) -> List[str]:
             vocab.append(character)
     return vocab
 
-def get_corpus_token_counts(corpus_tokens: List[str]) -> Dict[str, int]:
+def get_corpus_pair_counts(
+    corpus_tokens: List[str]
+) -> Dict[Tuple[str, str], int]:
     """
     Gets the count of each token present in the given corpus.
 
     Arguments:
-        corpus_tokens:       The tokens that comprise the corpus at hand.
+        corpus_tokens:      The tokens that comprise the corpus at hand.
     Return Values:
-        corpus_token_counts: The count for each token.
+        corpus_pair_counts: The count for each token.
     """
-    corpus_token_counts = {}
+    corpus_pair_counts = {}
     current_word_tokens = []
     for token in corpus_tokens:
         if token[0] == ' ':
-            word_token_counts = get_word_token_counts(current_word_tokens)
-            corpus_token_counts = {
-                token: corpus_token_counts.get(token, 0) +\
-                    word_token_counts.get(token, 0)
-                for token in set(corpus_token_counts) | set(word_token_counts)
+            word_pair_counts = get_word_pair_counts(current_word_tokens)
+            corpus_pair_counts = {
+                token: corpus_pair_counts.get(token, 0) +\
+                    word_pair_counts.get(token, 0)
+                for token in set(corpus_pair_counts) | set(word_pair_counts)
             }
             current_word_tokens = []
             continue
         current_word_tokens.append(token)
-    return corpus_token_counts
+    return corpus_pair_counts
 
-def get_word_token_counts(word_tokens: List[str]) -> Dict[str, int]:
+def get_word_pair_counts(word_tokens: List[str]) -> Dict[Tuple[str, str], int]:
     """
     Gets the count of each token present in the given word.
 
     Arguments:
-        word_tokens:       The tokens that comprise the word at hand.
+        word_tokens:      The tokens that comprise the word at hand.
     Return Values:
-        word_token_counts: The count for each token.
+        word_pair_counts: The count for each token.
     """
-    word_token_counts = {}
+    word_pair_counts = {}
     for token_index in range(len(word_tokens) - 1):
-        token_pair = word_tokens[token_index] + word_tokens[token_index + 1]
-        if token_pair not in word_token_counts.keys():
-            word_token_counts[token_pair] = 1
+        token_pair = (word_tokens[token_index], word_tokens[token_index + 1])
+        if token_pair not in word_pair_counts.keys():
+            word_pair_counts[token_pair] = 1
         else:
-            word_token_counts[token_pair] += 1
-    return word_token_counts
+            word_pair_counts[token_pair] += 1
+    return word_pair_counts
+
+def update_corpus_with_pair(
+    corpus_tokens: List[str], pair: Tuple[str, str]
+) -> List[str]:
+    """
+    Produces a new corpus with the given new pair reflected.
+
+    Arguments:
+        corpus_tokens:         The tokens in the old corpus.
+        pair:                  The new token pair to update
+                               the corpus with.
+    Return Values:
+        updated_corpus_tokens: The tokens for the new corpus.
+    """
+    prev_token_was_pair = False
+    updated_corpus_tokens = []
+    for token_index in range(len(corpus_tokens)):
+        if prev_token_was_pair:
+            continue
+        # TODO: This condition is broken
+        if corpus_tokens[token_index] == pair[0] and \
+            corpus_tokens[token_index + 1] == pair[0] and \
+            corpus_tokens[token_index + 1][0] != ' ':
+            updated_corpus_tokens.append(''.join(pair))
+            prev_token_was_pair = True
+        else:
+            updated_corpus_tokens.append(corpus_tokens[token_index])
+            prev_token_was_pair = False
+    return updated_corpus_tokens
 
 if __name__ == '__main__':
 
