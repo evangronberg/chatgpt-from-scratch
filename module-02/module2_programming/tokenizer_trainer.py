@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Dict, List
 
 """
 Your assignment is to implement BPE in the following method. You can add
@@ -26,7 +26,7 @@ have not covered these yet.
 """
 
 def train_tokenizer(
-    txt_file: str, vocab_size: int, base_vocabulary: List[str]
+    txt_file: str, vocabulary_size: int, base_vocabulary: List[str]
 ) -> None:
     """
     Trains a GPT-style tokenizer.
@@ -34,14 +34,24 @@ def train_tokenizer(
     Arguments:
         txt_file:        A string path to a text file of
                          data (i.e., `./data.txt`).
-        vocab_size:      Integer specifying the final vocab size.
-        base_vocabulary: List of strings to add to the vocabulary by default.
+        vocabulary_size: Integer specifying the final vocab size.
+        base_vocabulary: List of strings to add to the vocabulary
+                         by default.
     Return Values:
         None (writes two files: `./vocab.txt` and `./merges.json`)
     """
     with open(txt_file, 'r') as file:
         corpus = file.read()
-    corpus_characters = split_corpus_into_characters(corpus)
+    corpus_tokens = split_corpus_into_characters(corpus)
+
+    vocabulary = initialize_vocabulary(base_vocabulary)
+    while len(vocabulary) < vocabulary_size:
+        current_word = ''
+        # for character in corpus_tokens:
+        #     if character[0] == ' ':
+        #         token_frequency = get_token_frequency()
+        #         current_word = ''
+        #     current_word += character
 
 def split_corpus_into_characters(corpus: str) -> List[str]:
     """
@@ -69,6 +79,33 @@ def split_corpus_into_characters(corpus: str) -> List[str]:
                 character + corpus[character_index + 1])
             prev_character_space = True
     return corpus_characters
+
+def initialize_vocabulary(base_vocab: str) -> List[str]:
+    """
+    Creates a vocabulary using a single string comprised of
+    all characters that the vocabulary should initially include.
+
+    Arguments:
+        base_vocab: A string of all characters the vocabulary
+                    should contain.
+    Return Values:
+        vocab:      A list of all characters as an initial
+                    vocabulary.
+    """
+    vocab = []
+    for character in base_vocab:
+        if character == ' ':
+            continue
+        elif character.isalpha():
+            vocab.append(character)
+            vocab.append(' ' + character)
+        else:
+            vocab.append(character)
+    return vocab
+
+# def get_token_frequency(word: str) -> Dict[str, int]:
+#     """
+#     """
 
 if __name__ == '__main__':
 
