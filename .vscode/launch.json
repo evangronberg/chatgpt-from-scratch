@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Module 1 Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-01/module1_programming/linear.py",
+            "cwd": "${workspaceFolder}/module-01/module1_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Module 2 Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-02/module2_programming/tokenizer_trainer.py",
+            "cwd": "${workspaceFolder}/module-02/module2_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

@@ -39,7 +39,36 @@ def train_tokenizer(
     Return Values:
         None (writes two files: `./vocab.txt` and `./merges.json`)
     """
-    # TODO
+    with open(txt_file, 'r') as file:
+        corpus = file.read()
+    corpus_characters = split_corpus_into_characters(corpus)
+
+def split_corpus_into_characters(corpus: str) -> List[str]:
+    """
+    Splits a single-string corpus into a list of individual
+    characters in a GPT style (i.e., prefixes words with a space).
+
+    Arguments:
+        corpus:            A corpus of text represented
+                           as a single string.
+    Return Values:
+        corpus_characters: A corpus of text split up into
+                           individual characters.
+    """
+    corpus_characters = []
+    prev_character_space = False
+    for character_index, character in enumerate(corpus):
+        if prev_character_space:
+            prev_character_space = False
+            continue
+        if character != ' ':
+            corpus_characters.append(character)
+            prev_character_space = False
+        else:
+            corpus_characters.append(
+                character + corpus[character_index + 1])
+            prev_character_space = True
+    return corpus_characters
 
 if __name__ == '__main__':
 
