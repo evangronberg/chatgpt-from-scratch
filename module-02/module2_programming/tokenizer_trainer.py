@@ -41,17 +41,14 @@ def train_tokenizer(
         None (writes two files: `./vocab.txt` and `./merges.json`)
     """
     with open(txt_file, 'r') as file:
-        corpus = file.read()
+        corpus = file.readlines()[0]
+        # corpus = file.read() # TODO: Re-implement for full corpus
     corpus_tokens = split_corpus_into_characters(corpus)
 
+    merges = []
     vocabulary = initialize_vocabulary(base_vocabulary)
     while len(vocabulary) < vocabulary_size:
-        current_word = ''
-        # for character in corpus_tokens:
-        #     if character[0] == ' ':
-        #         token_frequency = get_token_frequency()
-        #         current_word = ''
-        #     current_word += character
+        corpus_token_counts = get_corpus_token_counts(corpus_tokens)
 
 def split_corpus_into_characters(corpus: str) -> List[str]:
     """
@@ -103,9 +100,47 @@ def initialize_vocabulary(base_vocab: str) -> List[str]:
             vocab.append(character)
     return vocab
 
-# def get_token_frequency(word: str) -> Dict[str, int]:
-#     """
-#     """
+def get_corpus_token_counts(corpus_tokens: List[str]) -> Dict[str, int]:
+    """
+    Gets the count of each token present in the given corpus.
+
+    Arguments:
+        corpus_tokens:       The tokens that comprise the corpus at hand.
+    Return Values:
+        corpus_token_counts: The count for each token.
+    """
+    corpus_token_counts = {}
+    current_word_tokens = []
+    for token in corpus_tokens:
+        if token[0] == ' ':
+            word_token_counts = get_word_token_counts(current_word_tokens)
+            corpus_token_counts = {
+                token: corpus_token_counts.get(token, 0) +\
+                    word_token_counts.get(token, 0)
+                for token in set(corpus_token_counts) | set(word_token_counts)
+            }
+            current_word_tokens = []
+            continue
+        current_word_tokens.append(token)
+    return corpus_token_counts
+
+def get_word_token_counts(word_tokens: List[str]) -> Dict[str, int]:
+    """
+    Gets the count of each token present in the given word.
+
+    Arguments:
+        word_tokens:       The tokens that comprise the word at hand.
+    Return Values:
+        word_token_counts: The count for each token.
+    """
+    word_token_counts = {}
+    for token_index in range(len(word_tokens) - 1):
+        token_pair = word_tokens[token_index] + word_tokens[token_index + 1]
+        if token_pair not in word_token_counts.keys():
+            word_token_counts[token_pair] = 1
+        else:
+            word_token_counts[token_pair] += 1
+    return word_token_counts
 
 if __name__ == '__main__':
 
