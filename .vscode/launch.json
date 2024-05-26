@@ -21,6 +21,15 @@
             "cwd": "${workspaceFolder}/module-02/module2_programming",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Module 3 Debug (Tokenizer)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-03/module3_programming/tokenizer.py",
+            "cwd": "${workspaceFolder}/module-03/module3_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
