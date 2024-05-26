@@ -44,7 +44,32 @@ class Tokenizer:
         Return Values:
             encoded_string: The string represented as a list of integers.
         """
-        # TODO
+        words = []
+        current_word_characters = []
+        for character in string:
+            if character == ' ':
+                words.append(current_word_characters)
+                current_word_characters = [character]
+            else:
+                current_word_characters.append(character)
+
+        for word_index, word in enumerate(words):
+            for merge in self.merges:
+                if merge[0] + merge[1] in ''.join(word):
+                    # We do this to ensure that, if there are multiple instances
+                    # of this merge in a given word, all instances are handled
+                    replacement_indices = [
+                        index for index in range(len(word) - 1)
+                        if word[index] + word[index + 1] == merge[0] + merge[1]
+                    ]
+                    for index in replacement_indices:
+                        word[index] = merge[0] + merge[1]
+                        del word[index + 1]
+                    words[word_index] = word
+        tokens = [token for word in words for token in word]
+
+        encoded_string = [self.vocab.index(token) for token in tokens]
+        return encoded_string
 
     def decode(self, list_of_integers: List[int]) -> str:
         """
@@ -55,7 +80,9 @@ class Tokenizer:
         Return Values:
             string:           The decoded string.
         """
-        # TODO
+        # string = ''
+        # for integer in list_of_integers:
+        #     pass
 
 if __name__ == '__main__':
 
