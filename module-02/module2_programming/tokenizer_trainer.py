@@ -1,6 +1,9 @@
+# Python-native dependencies
 import json
+from collections import defaultdict
 from typing import Dict, List, Tuple
 
+# External dependencies
 from tqdm import tqdm
 
 """
@@ -43,23 +46,20 @@ def train_tokenizer(
         None (writes two files: `./vocab.txt` and `./merges.json`)
     """
     with open(txt_file, 'r') as corpus_file:
-        corpus = corpus_file.readlines()[0]
-        # corpus = corpus_file.read() # TODO: Re-implement for full corpus
+        corpus = corpus_file.read()
     corpus_tokens = split_corpus_into_characters(corpus)
 
     merges = []
     vocabulary = initialize_vocabulary(base_vocabulary)
     initialize_vocabulary_size = len(vocabulary)
     for _ in tqdm(range(vocab_size - initialize_vocabulary_size)):
-        # TODO: Need to make this function call more efficient.
-        #       (It's currently responsible for >99% of the runtime)
         corpus_pair_counts = get_corpus_pair_counts(corpus_tokens)
-        if not corpus_pair_counts:
-            break
-        most_common_pair = max(corpus_pair_counts, key=corpus_pair_counts.get)
+        most_common_pair = max(
+            corpus_pair_counts, key=corpus_pair_counts.get)
         merges.append(most_common_pair)
         vocabulary.append(''.join(most_common_pair))
-        corpus_tokens = update_corpus_with_pair(corpus_tokens, most_common_pair)
+        corpus_tokens = update_corpus_tokens_with_pair(
+            corpus_tokens, most_common_pair)
 
     with open('vocab.txt', 'w') as vocab_file:
         for token in vocabulary:
@@ -80,24 +80,27 @@ def split_corpus_into_characters(corpus: str) -> List[str]:
                            individual characters.
     """
     corpus_characters = []
-    prev_character_space = False
+    prev_character_was_space = False
     for character_index, character in enumerate(corpus):
-        if prev_character_space:
-            prev_character_space = False
+        if prev_character_was_space:
+            prev_character_was_space = False
             continue
         if character != ' ':
             corpus_characters.append(character)
-            prev_character_space = False
+            prev_character_was_space = False
         else:
             corpus_characters.append(
                 character + corpus[character_index + 1])
-            prev_character_space = True
+            prev_character_was_space = True
     return corpus_characters
 
 def initialize_vocabulary(base_vocab: str) -> List[str]:
     """
     Creates a vocabulary using a single string comprised of
     all characters that the vocabulary should initially include.
+
+    NOTE: This vocabulary accounts for spaces GPT-style (i.e., each
+          letter has a version with a space appended to it).
 
     Arguments:
         base_vocab: A string of all characters the vocabulary
@@ -128,40 +131,38 @@ def get_corpus_pair_counts(
     Return Values:
         corpus_pair_counts: The count for each token.
     """
-    corpus_pair_counts = {}
+    corpus_pair_counts = defaultdict(int)
     current_word_tokens = []
     for token in corpus_tokens:
+        # If the token starts with a space, then we're starting a new word
         if token[0] == ' ':
-            word_pair_counts = get_word_pair_counts(current_word_tokens)
-            corpus_pair_counts = {
-                token: corpus_pair_counts.get(token, 0) +\
-                    word_pair_counts.get(token, 0)
-                for token in set(corpus_pair_counts) | set(word_pair_counts)
-            }
-            current_word_tokens = []
-            continue
-        current_word_tokens.append(token)
-    return corpus_pair_counts
+            corpus_pair_counts = update_corpus_pair_counts_with_word(
+                corpus_pair_counts, current_word_tokens
+            )
+            current_word_tokens = [token]
+        else:
+            current_word_tokens.append(token)
+    return dict(corpus_pair_counts)
 
-def get_word_pair_counts(word_tokens: List[str]) -> Dict[Tuple[str, str], int]:
+def update_corpus_pair_counts_with_word(
+    corpus_pair_counts: Dict[Tuple[str, str], int], word_tokens: List[str]
+) -> Dict[Tuple[str, str], int]:
     """
-    Gets the count of each token present in the given word.
+    Updates the pair counts for the corpus with
+    the tokens comprising the next word.
 
     Arguments:
-        word_tokens:      The tokens that comprise the word at hand.
+        corpus_pair_counts: The current count for each token.
+        word_tokens:        The tokens in the word to use for the update.
     Return Values:
-        word_pair_counts: The count for each token.
+        corpus_pair_counts: The updated count for each token.
     """
-    word_pair_counts = {}
     for token_index in range(len(word_tokens) - 1):
         token_pair = (word_tokens[token_index], word_tokens[token_index + 1])
-        if token_pair not in word_pair_counts.keys():
-            word_pair_counts[token_pair] = 1
-        else:
-            word_pair_counts[token_pair] += 1
-    return word_pair_counts
+        corpus_pair_counts[token_pair] += 1
+    return corpus_pair_counts
 
-def update_corpus_with_pair(
+def update_corpus_tokens_with_pair(
     corpus_tokens: List[str], pair: Tuple[str, str]
 ) -> List[str]:
     """
