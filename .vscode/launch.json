@@ -30,6 +30,15 @@
             "cwd": "${workspaceFolder}/module-03/module3_programming",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Module 3 Debug (Embedding Layer)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-03/module3_programming/embedding.py",
+            "cwd": "${workspaceFolder}/module-03/module3_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
