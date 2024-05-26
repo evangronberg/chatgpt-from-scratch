@@ -52,6 +52,8 @@ class Tokenizer:
                 current_word_characters = [character]
             else:
                 current_word_characters.append(character)
+        if current_word_characters:
+            words.append(current_word_characters)
 
         for word_index, word in enumerate(words):
             for merge in self.merges:
@@ -80,9 +82,10 @@ class Tokenizer:
         Return Values:
             string:           The decoded string.
         """
-        # string = ''
-        # for integer in list_of_integers:
-        #     pass
+        string = ''
+        for integer in list_of_integers:
+            string += self.vocab[integer]
+        return string
 
 if __name__ == '__main__':
 

@@ -142,6 +142,10 @@ def get_corpus_pair_counts(
             current_word_tokens = [token]
         else:
             current_word_tokens.append(token)
+    if current_word_tokens:
+        corpus_pair_counts = update_corpus_pair_counts_with_word(
+            corpus_pair_counts, current_word_tokens
+        )
     return dict(corpus_pair_counts)
 
 def update_corpus_pair_counts_with_word(
