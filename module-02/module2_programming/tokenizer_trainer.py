@@ -1,6 +1,8 @@
 import json
 from typing import Dict, List, Tuple
 
+from tqdm import tqdm
+
 """
 Your assignment is to implement BPE in the following method. You can add
 classes or other routines if you find them helpful. 
@@ -42,18 +44,23 @@ def train_tokenizer(
     """
     with open(txt_file, 'r') as corpus_file:
         corpus = corpus_file.readlines()[0]
-        # corpus = file.read() # TODO: Re-implement for full corpus
+        # corpus = corpus_file.read() # TODO: Re-implement for full corpus
     corpus_tokens = split_corpus_into_characters(corpus)
 
     merges = []
     vocabulary = initialize_vocabulary(base_vocabulary)
-    while len(vocabulary) < vocab_size:
+    initialize_vocabulary_size = len(vocabulary)
+    for _ in tqdm(range(vocab_size - initialize_vocabulary_size)):
+        # TODO: Need to make this function call more efficient.
+        #       (It's currently responsible for >99% of the runtime)
         corpus_pair_counts = get_corpus_pair_counts(corpus_tokens)
+        if not corpus_pair_counts:
+            break
         most_common_pair = max(corpus_pair_counts, key=corpus_pair_counts.get)
         merges.append(most_common_pair)
         vocabulary.append(''.join(most_common_pair))
         corpus_tokens = update_corpus_with_pair(corpus_tokens, most_common_pair)
-    
+
     with open('vocab.txt', 'w') as vocab_file:
         for token in vocabulary:
             vocab_file.write(f'{token}\n')
@@ -171,10 +178,10 @@ def update_corpus_with_pair(
     updated_corpus_tokens = []
     for token_index in range(len(corpus_tokens)):
         if prev_token_was_pair:
+            prev_token_was_pair = False
             continue
-        # TODO: This condition is broken
         if corpus_tokens[token_index] == pair[0] and \
-            corpus_tokens[token_index + 1] == pair[0] and \
+            corpus_tokens[token_index + 1] == pair[1] and \
             corpus_tokens[token_index + 1][0] != ' ':
             updated_corpus_tokens.append(''.join(pair))
             prev_token_was_pair = True
