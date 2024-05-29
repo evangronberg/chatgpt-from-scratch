@@ -28,7 +28,7 @@ class CustomMHA(torch.nn.Module):
 		
 		# TODO
 
-	def forward(self, x):
+	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
 		Forward propagates the input through the multi-head attention layer.
 
@@ -42,10 +42,22 @@ class CustomMHA(torch.nn.Module):
 
 if __name__ == "__main__":
 
+	class OfficialMHA(torch.nn.Module):
+		def __init__(self, d_model, n_heads):
+			super().__init__()
+			self.mha = torch.nn.MultiheadAttention(d_model, n_heads)
+		def forward(self, x):
+			return self.mha(x)
+
 	# Example of building and running this class
-	mha = CustomMHA(128, 8)
+	mha_custom = CustomMHA(128, 8)
+	mha_official = OfficialMHA(128, 8)
 
 	# 32 samples of length 6 each, with d_model at 128
 	x = torch.randn((32, 6, 128))
-	y = mha(x)
-	print(x.shape, y.shape) # should be the same
+	y_custom = mha_custom(x)
+	y_official = mha_official(x)
+	print(y_custom)
+	print(y_official)
+	# All of these shapes should be the same
+	print(x.shape, y_custom.shape, y_official.shape)
