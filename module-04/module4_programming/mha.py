@@ -44,23 +44,24 @@ class CustomMHA(torch.nn.Module):
 			   multi-head attention computed for each batch entry.
 		"""
 		x = x.to(self.w_qkv.dtype)
-		batch_size, seq_length = x.shape[0], x.shape[1]
 		t = torch.matmul(x, self.w_qkv.T) # Shape: (B, S, 3D)
+
 		d_h = int(self.d_model / self.n_heads)
+		batch_size, seq_length = x.shape[0], x.shape[1]
 		q = t[:, :, :self.d_model].reshape(
 			batch_size, seq_length, self.n_heads, d_h)
 		k = t[:, :, self.d_model:2*self.d_model].reshape(
 			batch_size, seq_length, self.n_heads, d_h)
 		v = t[:, :, 2*self.d_model:].reshape(
 			batch_size, seq_length, self.n_heads, d_h)
-		
-		# GOOD UP TO HERE
 
+		# This is the attention equation
 		y_prime = torch.matmul(torch.softmax(
-			(torch.matmul(q, k.T) / torch.sqrt(self.d_model))
-		), v) # Shape: (B, S, H, D/H)
-		y_prime = y_prime.reshape(batch_size, seq_length, -1) # Shape: (B, S, D)
-		y = torch.matmul(self.w_o, y_prime) # Shape: (B, S, D)
+			(torch.matmul(q, k.mT) / math.sqrt(self.d_model)),
+		dim=-1), v) # Shape: (B, S, H, D/H)
+		y_prime = y_prime.reshape(
+			batch_size, seq_length, -1) # Shape: (B, S, D)
+		y = torch.matmul(y_prime, self.w_o.T) # Shape: (B, S, D)
 		return y
 
 if __name__ == "__main__":
@@ -70,7 +71,8 @@ if __name__ == "__main__":
 			super().__init__()
 			self.mha = torch.nn.MultiheadAttention(d_model, n_heads)
 		def forward(self, x):
-			return self.mha(x, x, x)
+			y, _ = self.mha(x, x, x)
+			return y
 
 	mha_custom = CustomMHA(128, 8)
 	mha_official = OfficialMHA(128, 8)
@@ -79,7 +81,6 @@ if __name__ == "__main__":
 	x = torch.randn((32, 6, 128))
 	y_custom = mha_custom(x)
 	y_official = mha_official(x)
-	print(y_custom)
-	print(y_official)
+	print((y_custom == y_official).sum().item())
 	# All of these shapes should be the same
 	print(x.shape, y_custom.shape, y_official.shape)
