@@ -39,6 +39,15 @@
             "cwd": "${workspaceFolder}/module-03/module3_programming",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Module 4 Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-04/module4_programming/mha.py",
+            "cwd": "${workspaceFolder}/module-04/module4_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }

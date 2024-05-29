@@ -25,8 +25,13 @@ class CustomMHA(torch.nn.Module):
 	"""
 	def __init__(self, d_model: int, n_heads: int) -> None:
 		super().__init__()
-		
-		# TODO
+
+		self.d_model = d_model
+		self.n_heads = n_heads
+		self.w_qkv = torch.nn.Parameter(
+			torch.randn((3 * d_model, d_model)))
+		self.w_o = torch.nn.Parameter(
+			torch.randn((d_model, d_model)))
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
@@ -38,7 +43,25 @@ class CustomMHA(torch.nn.Module):
 			y: A tensor of the same size as x which has had
 			   multi-head attention computed for each batch entry.
 		"""
-		# TODO
+		x = x.to(self.w_qkv.dtype)
+		batch_size, seq_length = x.shape[0], x.shape[1]
+		t = torch.matmul(x, self.w_qkv.T) # Shape: (B, S, 3D)
+		d_h = int(self.d_model / self.n_heads)
+		q = t[:, :, :self.d_model].reshape(
+			batch_size, seq_length, self.n_heads, d_h)
+		k = t[:, :, self.d_model:2*self.d_model].reshape(
+			batch_size, seq_length, self.n_heads, d_h)
+		v = t[:, :, 2*self.d_model:].reshape(
+			batch_size, seq_length, self.n_heads, d_h)
+		
+		# GOOD UP TO HERE
+
+		y_prime = torch.matmul(torch.softmax(
+			(torch.matmul(q, k.T) / torch.sqrt(self.d_model))
+		), v) # Shape: (B, S, H, D/H)
+		y_prime = y_prime.reshape(batch_size, seq_length, -1) # Shape: (B, S, D)
+		y = torch.matmul(self.w_o, y_prime) # Shape: (B, S, D)
+		return y
 
 if __name__ == "__main__":
 
@@ -47,9 +70,8 @@ if __name__ == "__main__":
 			super().__init__()
 			self.mha = torch.nn.MultiheadAttention(d_model, n_heads)
 		def forward(self, x):
-			return self.mha(x)
+			return self.mha(x, x, x)
 
-	# Example of building and running this class
 	mha_custom = CustomMHA(128, 8)
 	mha_official = OfficialMHA(128, 8)
 
