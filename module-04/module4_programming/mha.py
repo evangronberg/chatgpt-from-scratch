@@ -69,7 +69,8 @@ if __name__ == "__main__":
 	class OfficialMHA(torch.nn.Module):
 		def __init__(self, d_model, n_heads):
 			super().__init__()
-			self.mha = torch.nn.MultiheadAttention(d_model, n_heads)
+			self.mha = torch.nn.MultiheadAttention(
+				d_model, n_heads, batch_first=True)
 		def forward(self, x):
 			y, _ = self.mha(x, x, x)
 			return y
@@ -81,6 +82,5 @@ if __name__ == "__main__":
 	x = torch.randn((32, 6, 128))
 	y_custom = mha_custom(x)
 	y_official = mha_official(x)
-	print((y_custom == y_official).sum().item())
 	# All of these shapes should be the same
 	print(x.shape, y_custom.shape, y_official.shape)
