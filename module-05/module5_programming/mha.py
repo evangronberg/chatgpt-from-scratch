@@ -63,28 +63,3 @@ class CustomMHA(torch.nn.Module):
 			batch_size, seq_length, -1) # Shape: (B, S, D)
 		y = torch.matmul(y_prime, self.w_o.T) # Shape: (B, S, D)
 		return y
-
-if __name__ == '__main__':
-
-	# Consider instantiating the official MHA with weights from
-	# the custom MHA to make sure it matches, thus the output
-	# from passing x would match
-
-	class OfficialMHA(torch.nn.Module):
-		def __init__(self, d_model, n_heads):
-			super().__init__()
-			self.mha = torch.nn.MultiheadAttention(
-				d_model, n_heads, batch_first=True)
-		def forward(self, x):
-			y, _ = self.mha(x, x, x)
-			return y
-
-	mha_custom = CustomMHA(128, 8)
-	mha_official = OfficialMHA(128, 8)
-
-	# 32 samples of length 6 each, with d_model at 128
-	x = torch.randn((32, 6, 128))
-	y_custom = mha_custom(x)
-	y_official = mha_official(x)
-	# All of these shapes should be the same
-	print(x.shape, y_custom.shape, y_official.shape)
