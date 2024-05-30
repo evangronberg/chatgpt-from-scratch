@@ -1,7 +1,10 @@
+# External dependencies
 import torch
+
+# Internal dependencies
+from mha import CustomMHA
 from linear import CustomLinear
 from embedding import CustomEmbedding
-from mha import CustomMHA
 
 """
 Complete this module which handles a single "block" of our model
@@ -11,21 +14,28 @@ residual connections around them:
 1) norm1, mha
 2) norm2, a two-layer MLP, dropout
 
-It is perfectly fine to use pytorch implementations of layer norm and dropout,
+It is perfectly fine to use PyTorch implementations of layer norm and dropout,
 as well as activation functions (torch.nn.LayerNorm, torch.nn.Dropout, torch.nn.ReLU).
 """
 
 class TransformerDecoderBlock(torch.nn.Module):
 	"""
+	A transformer's decoder block, here used as the
+	foundational component of a GPT language model.
+
+	Arguments:
+		d_model: The length of vectors used in this model.
+		n_heads: The number of attention heads. You can assume that
+				 this evenly divides d_model.
 	"""
-	def __init__(self, d_model, n_heads):
+	def __init__(self, d_model: int, n_heads: int) -> None:
 		super().__init__()
 		
 		# TODO
 
-	def forward(self, x):
+	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
-		param x : (tensor) a tensor of size (batch_size, sequence_length, d_model)
+		x: A tensor of size (batch_size, sequence_length, d_model)
 		returns the computed output of the block with the same size.
 		"""
 		# TODO
@@ -38,25 +48,37 @@ layer should project outputs to size [vocab_size].
 
 class GPTModel(torch.nn.Module):
 	"""
-	param d_model : (int) the size of embedding vectors and throughout the model
-	param n_heads : (int) the number of attention heads, evenly divides d_model
-	param layers : (int) the number of transformer decoder blocks
-	param vocab_size : (int) the final output vector size
-	param max_seq_len : (int) the longest sequence the model can process.
-		This is used to create the position embedding- i.e. the highest possible
-		position to embed is max_seq_len
+	A full GPT model that takes in a sequence of tokens represented
+	by their token IDs and outputs a probability distribution
+	across all possible next tokens.
+
+	Arguments:
+		d_model:     The size of embedding vectors and throughout the model
+		n_heads:     The number of attention heads, evenly divides d_model
+		layers:      The number of transformer decoder blocks
+		vocab_size:  The final output vector size
+		max_seq_len: The longest sequence the model can process. This is used
+		             to create the position embedding (i.e., the highes
+					 possible position to embed is max_seq_len).
 	"""
-	def __init__(self, d_model, n_heads, layers, vocab_size, max_seq_len):
+	def __init__(
+		self, d_model: int, n_heads: int, layers: int,
+		vocab_size: int, max_seq_len: int
+	) -> None:
 		super().__init__()
 		
 		# TODO
 
-	def forward(self, x):
+	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
-		param x : (long tensor) an input of size (batch_size, sequence_length) which is
-		filled with token ids
+		Forward propagates the input through the model.
 
-		returns a tensor of size (batch_size, vocab_size), the raw logits for the output
+		Arguments:
+			x: An input of size (batch_size, sequence_length) which
+			   is filled with token IDs.
+		Return Values:
+			y: A tensor of size (batch_size, vocab_size) containing
+			   the raw logits for the output.
 		"""
 		# TODO
 
