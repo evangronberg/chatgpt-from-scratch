@@ -57,7 +57,7 @@ class CustomMHA(torch.nn.Module):
 
 		# This is the attention equation
 		y_prime = torch.matmul(torch.softmax(
-			(torch.matmul(q, k.mT) / math.sqrt(self.d_model)),
+			torch.tril(torch.matmul(q, k.mT) / math.sqrt(self.d_model)),
 		dim=-1), v) # Shape: (B, S, H, D/H)
 		y_prime = y_prime.reshape(
 			batch_size, seq_length, -1) # Shape: (B, S, D)

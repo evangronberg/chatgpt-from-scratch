@@ -14,8 +14,9 @@ residual connections around them:
 1) norm1, mha
 2) norm2, a two-layer MLP, dropout
 
-It is perfectly fine to use PyTorch implementations of layer norm and dropout,
-as well as activation functions (torch.nn.LayerNorm, torch.nn.Dropout, torch.nn.ReLU).
+It is perfectly fine to use PyTorch implementations of layer norm
+and dropout, as well as activation functions (torch.nn.LayerNorm,
+torch.nn.Dropout, torch.nn.ReLU).
 """
 
 class TransformerDecoderBlock(torch.nn.Module):
@@ -30,15 +31,34 @@ class TransformerDecoderBlock(torch.nn.Module):
 	"""
 	def __init__(self, d_model: int, n_heads: int) -> None:
 		super().__init__()
-		
-		# TODO
+
+		self.mha_component = torch.nn.Sequential(
+			torch.nn.LayerNorm(d_model),
+			CustomMHA(d_model, n_heads)
+		)
+		self.mlp_component = torch.nn.Sequential(
+			torch.nn.LayerNorm(d_model),
+			CustomLinear(d_model, 4 * d_model),
+			torch.nn.ReLU(),
+			CustomLinear(4 * d_model, d_model),
+			torch.nn.Dropout(0.1)
+		)
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
-		x: A tensor of size (batch_size, sequence_length, d_model)
-		returns the computed output of the block with the same size.
+		Forward propagates the input through the block.
+
+		Arguments:
+			x: A tensor of size (batch_size, sequence_length, d_model)
+			   returns the computed output of the block with the same size.
+		Return Values:
+			y: Output tensor of the transformer block.
 		"""
-		# TODO
+		y_mha_component = self.mha_component(x)
+		x_mlp_component = x + y_mha_component
+		y_mlp_component = self.mlp_component(x_mlp_component) 
+		y = x_mlp_component + y_mlp_component
+		return y
 
 """
 Create a full GPT model which has two embeddings (token and position),
@@ -66,8 +86,14 @@ class GPTModel(torch.nn.Module):
 		vocab_size: int, max_seq_len: int
 	) -> None:
 		super().__init__()
-		
-		# TODO
+
+		self.token_embedding = CustomEmbedding(vocab_size, d_model)
+		self.position_embedding = CustomEmbedding(max_seq_len, d_model)
+
+		self.transformer_blocks = [
+			TransformerDecoderBlock(d_model, n_heads) for _ in range(layers)
+		]
+		self.output_layer = CustomLinear(d_model, vocab_size)
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
@@ -80,12 +106,24 @@ class GPTModel(torch.nn.Module):
 			y: A tensor of size (batch_size, vocab_size) containing
 			   the raw logits for the output.
 		"""
-		# TODO
+		y_token_embedding = self.token_embedding(x)
+		y_position_embedding = self.position_embedding(
+			torch.arange(x.shape[1]).expand(x.shape[0], x.shape[1]))
+		y = y_token_embedding + y_position_embedding
 
-if __name__ == "__main__":
+		for transformer_block_index in range(len(self.transformer_blocks)):
+			y = self.transformer_blocks[transformer_block_index](y)
 
-	model = GPTModel(128, 8, 4, 1000, 512)
-	B = 32
-	S = 48
-	x = torch.randint(1000, (B, S))
+		y = torch.softmax(self.output_layer(y), dim=-1)
+		return y
+
+if __name__ == '__main__':
+
+	model = GPTModel(
+		d_model=128, n_heads=8, layers=4,
+		vocab_size=1000, max_seq_len=512
+	)
+	batch_size = 32
+	sequence_length = 48
+	x = torch.randint(1000, (batch_size, sequence_length))
 	y = model(x)

@@ -48,6 +48,7 @@ class CustomMHA(torch.nn.Module):
 
 		d_h = int(self.d_model / self.n_heads)
 		batch_size, seq_length = x.shape[0], x.shape[1]
+		# TODO: May need to switch this up per v2 slides?
 		q = t[:, :, :self.d_model].reshape(
 			batch_size, seq_length, self.n_heads, d_h)
 		k = t[:, :, self.d_model:2*self.d_model].reshape(
@@ -57,7 +58,7 @@ class CustomMHA(torch.nn.Module):
 
 		# This is the attention equation
 		y_prime = torch.matmul(torch.softmax(
-			(torch.matmul(q, k.mT) / math.sqrt(self.d_model)),
+			torch.tril(torch.matmul(q, k.mT) / math.sqrt(self.d_model)),
 		dim=-1), v) # Shape: (B, S, H, D/H)
 		y_prime = y_prime.reshape(
 			batch_size, seq_length, -1) # Shape: (B, S, D)
