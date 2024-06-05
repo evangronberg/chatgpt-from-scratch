@@ -2,6 +2,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, TensorDataset
 
 # Internal dependencies
 from gpt import GPTModel
@@ -57,8 +58,40 @@ def train() -> None:
     print('Model has', param_count, 'parameters.')
     model = model.to(device)
 
-    sequences = np.load('./sequences.npy', allow_pickle=True)    
+    batch_size = 16
+    microbatch_size = 4
+    batch_count_loss_print = 100
 
+    sequences = np.load('./sequences.npy', allow_pickle=True)
+    sequences = torch.tensor(sequences)
+    sequences_dataset = TensorDataset(sequences)
+    sequences_loader = DataLoader(
+        sequences_dataset, batch_size=microbatch_size)
+
+    loss_function = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters())
+
+    batch_count, batch_loss, batch_losses = 0, 0.0, []
+    for microbatch_index, microbatch in enumerate(sequences_loader):
+        prediction = model(microbatch[0].to(device))
+        loss = loss_function(prediction, None) # TODO: Get `target`
+        loss.backward()
+        batch_loss += loss
+        if microbatch_index % (batch_size / microbatch_size) == 0:
+            optimizer.step()
+            optimizer.zero_grad()
+            batch_loss = batch_loss / batch_size
+            batch_losses.append(batch_loss)
+            if batch_count % batch_count_loss_print:
+                print(f'BATCH {batch_count} LOSS: {batch_loss}')
+                plt.plot(batch_losses)
+                plt.savefig('./training_loss.png')
+                plt.clf()
+            batch_loss = 0.0
+            batch_count += 1
+
+    plt.plot(batch_losses)
+    plt.savefig('./training_loss.png')
     torch.save(model.state_dict(), './model_weights.pt')
 
 if __name__ == '__main__':

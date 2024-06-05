@@ -107,8 +107,9 @@ class GPTModel(torch.nn.Module):
 			   the raw logits for the output.
 		"""
 		y_token_embedding = self.token_embedding(x)
-		y_position_embedding = self.position_embedding(
-			torch.arange(x.shape[1]).expand(x.shape[0], x.shape[1]))
+		x_position_embedding = torch.arange(x.shape[1]).expand(
+			x.shape[0], x.shape[1]).to(next(self.parameters()).device)
+		y_position_embedding = self.position_embedding(x_position_embedding)
 		y = y_token_embedding + y_position_embedding
 
 		for transformer_block_index in range(len(self.transformer_blocks)):
