@@ -57,6 +57,24 @@
             "cwd": "${workspaceFolder}/module-05/module5_programming",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Module 6 Debug (Dataset Construction)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-06/module6_programming/construct_dataset.py",
+            "cwd": "${workspaceFolder}/module-06/module6_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Module 6 Debug (Model Training)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-06/module6_programming/train_model.py",
+            "cwd": "${workspaceFolder}/module-06/module6_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
