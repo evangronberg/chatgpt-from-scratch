@@ -14,6 +14,4 @@ A tensor is, at its core, an n-dimensional matrix that can leverage graphical pr
 
 A gradient is different from a generic tensor in that a gradient is a tensor that is _attached to_  a generic tensor, and it is calculated rather than directly instantiated. More specifically, it is the differential of the generic tensor with respect to another value (e.g., the loss resulting from a pass through a neural network).
 
-Finally, a parameter is different from a generic tensor in that a parameter is a learnable value in a neural network. Parameters are defined by generic tensors, but their purpose and use is specific – they manipulate inputs to produce an output and are, over the course of time, modified by gradients (discussed above) to become better and better at transforming inputs into accurate outputs.
-
-_Note: PyTorch offers a specific `Parameter` object, but the object itself is not discussed at any length in the tutorial provided, so it is not discussed here either._
+Finally, a parameter is different from a generic tensor in that a parameter is inherently a learnable value in a neural network. Parameters are defined by generic tensors, but their purpose and use is specific – they manipulate inputs to produce an output and are, over the course of time, modified by gradients (discussed above) to become better and better at transforming inputs into accurate outputs. To accomplish this, PyTorch uses the `Parameter` class to mark parameters for automatic updating by optimizers.

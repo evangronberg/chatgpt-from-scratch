@@ -90,9 +90,9 @@ class GPTModel(torch.nn.Module):
 		self.token_embedding = CustomEmbedding(vocab_size, d_model)
 		self.position_embedding = CustomEmbedding(max_seq_len, d_model)
 
-		self.transformer_blocks = [
+		self.transformer_blocks = torch.nn.Sequential(*[
 			TransformerDecoderBlock(d_model, n_heads) for _ in range(layers)
-		]
+		])
 		self.output_layer = CustomLinear(d_model, vocab_size)
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -111,8 +111,7 @@ class GPTModel(torch.nn.Module):
 			torch.arange(x.shape[1]).expand(x.shape[0], x.shape[1]))
 		y = y_token_embedding + y_position_embedding
 
-		for transformer_block_index in range(len(self.transformer_blocks)):
-			y = self.transformer_blocks[transformer_block_index](y)
+		y = self.transformer_blocks(y)
 
 		y = torch.softmax(self.output_layer(y), dim=-1)
 		return y
