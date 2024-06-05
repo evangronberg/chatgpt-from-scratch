@@ -1,15 +1,18 @@
+# External dependencies
 import torch
 import numpy as np
-from gpt import GPTModel
 import matplotlib.pyplot as plt
 
+# Internal dependencies
+from gpt import GPTModel
 
-# since we didn't really cover how to do this in lecture-
-# this creates a learning rate schedule for you. Refer to the 
-# pytorch docs for more info on using a scheduler.
+# Since we didn't really cover how to do this in lecture -
+# this creates a learning rate schedule for you. Refer to the
+# PyTorch docs for more info on using a scheduler.
 
 # This one is designed for you to call scheduler.step() on every
-# model update step. 
+# model update step.
+
 def cosine_with_warmup_lr_scheduler(opt, total_steps, warmup_steps):
     def thunk(stepnum):
         if stepnum <= warmup_steps:
@@ -26,28 +29,39 @@ def cosine_with_warmup_lr_scheduler(opt, total_steps, warmup_steps):
     scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=thunk)
     return scheduler
 
-# ===========================================================================
-
-'''
+"""
 Complete the following method which trains a GPT model and saves a loss curve.
-'''
-def train():
+"""
 
-    device = torch.device("cuda") # use "cpu" if not gpu available
+def train() -> None:
+    """
+    Trains and saves a GPT model, also saves a loss curve.
 
-    # adjust as needed
-    model = GPTModel(d_model=512, n_heads=16, layers=8, vocab_size=10000, max_seq_len=256)
+    Arguments:
+        None
+    Return Values:
+        None (saves model/loss curve)
+    """
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
+
+    # Adjust as needed
+    model = GPTModel(
+        d_model=512, n_heads=16, layers=8,
+        vocab_size=10000, max_seq_len=256
+    )
     param_count = sum(p.numel() for p in model.parameters())
-    print("Model has", param_count, "parameters.")
-
+    print('Model has', param_count, 'parameters.')
     model = model.to(device)
 
-    # TODO
+    # TODO: Put new code here
 
-    # save model
-    torch.save(model.state_dict(), "./model_weights.pt")
+    # Save model
+    torch.save(model.state_dict(), './model_weights.pt')
 
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     train()
