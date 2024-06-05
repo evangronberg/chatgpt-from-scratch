@@ -44,6 +44,11 @@ def train() -> None:
     Return Values:
         None (saves model/loss curve)
     """
+    vocab_size = 10000
+    batch_size = 16
+    microbatch_size = 4
+    batch_count_loss_print = 100
+
     if torch.cuda.is_available():
         device = torch.device('cuda')
     elif torch.backends.mps.is_available():
@@ -53,15 +58,11 @@ def train() -> None:
 
     model = GPTModel(
         d_model=512, n_heads=16, layers=8,
-        vocab_size=10000, max_seq_len=256
+        vocab_size=vocab_size, max_seq_len=256
     )
     param_count = sum(p.numel() for p in model.parameters())
     print('Model has', param_count, 'parameters.')
     model = model.to(device)
-
-    batch_size = 16
-    microbatch_size = 4
-    batch_count_loss_print = 100
 
     sequences = np.load('./sequences.npy', allow_pickle=True)
     sequences = torch.tensor(sequences)
@@ -76,10 +77,16 @@ def train() -> None:
     for microbatch_index, microbatch in tqdm(
         enumerate(sequences_loader), total=len(sequences_loader)
     ):
-        prediction = model(microbatch[0].to(device))
-        loss = loss_function(prediction, None) # TODO: Get `target`
+        input = microbatch[0][:, :255].to(device)
+        target = microbatch[0][:, 1:].to(device)
+        prediction = model(input)
+        target = torch.nn.functional.one_hot(
+            target, num_classes=vocab_size
+        ).to(prediction.dtype)
+        loss = loss_function(prediction, target)
         loss.backward()
         batch_loss += loss
+        # TODO: Fix to increment at right time
         if microbatch_index % (batch_size / microbatch_size) == 0:
             optimizer.step()
             optimizer.zero_grad()

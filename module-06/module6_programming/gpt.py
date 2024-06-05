@@ -116,14 +116,3 @@ class GPTModel(torch.nn.Module):
 
 		y = torch.softmax(self.output_layer(y), dim=-1)
 		return y
-
-if __name__ == '__main__':
-
-	model = GPTModel(
-		d_model=128, n_heads=8, layers=4,
-		vocab_size=1000, max_seq_len=512
-	)
-	batch_size = 32
-	sequence_length = 48
-	x = torch.randint(1000, (batch_size, sequence_length))
-	y = model(x)
