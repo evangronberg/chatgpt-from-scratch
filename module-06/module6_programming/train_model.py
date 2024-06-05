@@ -1,6 +1,7 @@
 # External dependencies
 import torch
 import numpy as np
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -72,7 +73,9 @@ def train() -> None:
     optimizer = torch.optim.Adam(model.parameters())
 
     batch_count, batch_loss, batch_losses = 0, 0.0, []
-    for microbatch_index, microbatch in enumerate(sequences_loader):
+    for microbatch_index, microbatch in tqdm(
+        enumerate(sequences_loader), total=len(sequences_loader)
+    ):
         prediction = model(microbatch[0].to(device))
         loss = loss_function(prediction, None) # TODO: Get `target`
         loss.backward()

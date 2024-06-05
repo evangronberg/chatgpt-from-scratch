@@ -32,9 +32,6 @@ class TransformerDecoderBlock(torch.nn.Module):
 	def __init__(self, d_model: int, n_heads: int) -> None:
 		super().__init__()
 
-		self.ln1 = torch.nn.LayerNorm(d_model)
-		self.mha = CustomMHA(d_model, n_heads)
-
 		self.mha_component = torch.nn.Sequential(
 			torch.nn.LayerNorm(d_model),
 			CustomMHA(d_model, n_heads)
@@ -57,9 +54,6 @@ class TransformerDecoderBlock(torch.nn.Module):
 		Return Values:
 			y: Output tensor of the transformer block.
 		"""
-		a = self.mha(x)
-		a = self.ln1(x)
-		b = self.mha(a)
 		y_mha_component = self.mha_component(x)
 		x_mlp_component = x + y_mha_component
 		y_mlp_component = self.mlp_component(x_mlp_component) 
