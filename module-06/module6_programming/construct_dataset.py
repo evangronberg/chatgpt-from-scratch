@@ -57,9 +57,9 @@ def construct_dataset(
                     (new_sequence_index + 1) * sequence_length:
                 ] # NOTE: If we're on the last sample, this does sequence
                   #       does not get added to `sequences` since it is
-                  #       not a complete, 256-length sequence
+                  #       not a complete, `sequence_length` sequence
     sequences = np.array(sequences)
-    sequences = np.random.shuffle(sequences)
+    np.random.shuffle(sequences)
     np.save('./sequences.npy', sequences)
     return sequences
 

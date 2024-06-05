@@ -49,7 +49,6 @@ def train() -> None:
     else:
         device = torch.device('cpu')
 
-    # Adjust as needed
     model = GPTModel(
         d_model=512, n_heads=16, layers=8,
         vocab_size=10000, max_seq_len=256
@@ -58,9 +57,8 @@ def train() -> None:
     print('Model has', param_count, 'parameters.')
     model = model.to(device)
 
-    # TODO: Put new code here
+    sequences = np.load('./sequences.npy', allow_pickle=True)    
 
-    # Save model
     torch.save(model.state_dict(), './model_weights.pt')
 
 if __name__ == '__main__':
