@@ -44,9 +44,14 @@ def train() -> None:
     Return Values:
         None (saves model/loss curve)
     """
+    d_model = 256
+    n_heads = 8
+    layers = 4
     vocab_size = 10000
-    batch_size = 16
-    microbatch_size = 4
+    max_seq_len = 256
+
+    batch_size = 32
+    microbatch_size = 8
     batch_count_loss_print = 100
 
     if torch.cuda.is_available():
@@ -57,8 +62,8 @@ def train() -> None:
         device = torch.device('cpu')
 
     model = GPTModel(
-        d_model=512, n_heads=16, layers=8,
-        vocab_size=vocab_size, max_seq_len=256
+        d_model=d_model, n_heads=n_heads, layers=layers,
+        vocab_size=vocab_size, max_seq_len=max_seq_len
     )
     param_count = sum(p.numel() for p in model.parameters())
     print('Model has', param_count, 'parameters.')
@@ -73,7 +78,7 @@ def train() -> None:
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters())
 
-    batch_count, batch_loss, batch_losses = 0, 0.0, []
+    batch_count, batch_loss_sum, batch_losses = 0, 0.0, []
     for microbatch_index, microbatch in tqdm(
         enumerate(sequences_loader), total=len(sequences_loader)
     ):
@@ -85,19 +90,18 @@ def train() -> None:
         ).to(prediction.dtype)
         loss = loss_function(prediction, target)
         loss.backward()
-        batch_loss += loss
-        # TODO: Fix to increment at right time
-        if microbatch_index % (batch_size / microbatch_size) == 0:
+        batch_loss_sum += float(loss)
+        if (microbatch_index + 1) % (batch_size / microbatch_size) == 0:
             optimizer.step()
             optimizer.zero_grad()
-            batch_loss = batch_loss / batch_size
+            batch_loss = batch_loss_sum / batch_size
             batch_losses.append(batch_loss)
-            if batch_count % batch_count_loss_print:
-                print(f'BATCH {batch_count} LOSS: {batch_loss}')
+            if (batch_count + 1) % batch_count_loss_print == 0:
+                print(f'BATCH {batch_count + 1} LOSS: {batch_loss}')
                 plt.plot(batch_losses)
                 plt.savefig('./training_loss.png')
                 plt.clf()
-            batch_loss = 0.0
+            batch_loss_sum = 0.0
             batch_count += 1
 
     plt.plot(batch_losses)
