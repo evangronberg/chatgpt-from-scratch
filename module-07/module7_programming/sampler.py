@@ -69,25 +69,33 @@ class Sampler:
 			sampled_token_id:    A single token ID, sampled according to the
 			                     specified sampling parameters.
 		"""
-		# TODO: Incorporate penalties
-
 		logits = torch.tensor(raw_unsorted_logits)
 		logits, indices = torch.sort(logits, descending=True)
 
+		penalties = torch.ones((len(logits)))
+		occurred_token_ids = set()
+		for token_id in previous_token_ids:
+			penalties[token_id] += (self.frequency_penalty - 1)
+			if token_id not in occurred_token_ids:
+				penalties[token_id] += (self.presence_penalty - 1)
+				occurred_token_ids.add(token_id)
+
 		if self.top_p is not None:
-			logits = torch.softmax(logits, dim=0)
+			logits = torch.softmax(logits / penalties, dim=0)
 			p_sum, top_p_tokens = 0.0, []
 			for logit, index in zip(logits, indices):
 				if p_sum < self.top_p:
 					p_sum += float(logit)
 					top_p_tokens.append(int(index))
-			top_p_distribution = torch.softmax(logits[top_p_tokens], dim=0)
+			top_p_distribution = torch.softmax(
+				logits[top_p_tokens] / penalties[top_p_tokens], dim=0)
 			top_p_distribution_sample_index = torch.multinomial(
 				top_p_distribution, num_samples=1)
 			sampled_token_id = top_p_tokens[top_p_distribution_sample_index]
 		else:
 			top_k_tokens = indices[:self.top_k]
-			top_k_distribution = torch.softmax(logits[:self.top_k], dim=0)
+			top_k_distribution = torch.softmax(
+				logits[:self.top_k] / penalties[:self.top_k], dim=0)
 			top_k_distribution_sample_index = torch.multinomial(
 				top_k_distribution, num_samples=1)
 			sampled_token_id = top_k_tokens[top_k_distribution_sample_index]
