@@ -75,6 +75,15 @@
             "cwd": "${workspaceFolder}/module-06/module6_programming",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Module 7 Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-07/module7_programming/sampler.py",
+            "cwd": "${workspaceFolder}/module-07/module7_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
