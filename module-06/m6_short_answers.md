@@ -14,4 +14,4 @@ GPT-2 and T5 introduced similar ideas in the beginning of 2019. The key idea is 
 
 **Answer**
 
-TBA
+Per this module's programming assignment, training a GPT model is something of a supervised-unsupervised hybrid approach. That is, the corpus the model is trained on is not formally labeled, but we use the sequential nature of text to effectively create labels. An explicitly supervised approach pairs input text with an ideal output (e.g., a question with an answer). The GPT training approach, however, described by Radford et al. as an unsupervised approach, has the model predict next words across the entire corpus. The quote above, then, is best interpreted as saying that a more traditional, supervised approach only evaluates model performance against explicit labels, while the unsupervised approach evaluates model performance against next-word prediction across the full dataset.
