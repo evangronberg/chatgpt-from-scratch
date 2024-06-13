@@ -28,9 +28,9 @@ class CustomMHA(torch.nn.Module):
 
 		self.d_model = d_model
 		self.n_heads = n_heads
-		self.w_qkv = torch.nn.Parameter(
+		self.W_qkv = torch.nn.Parameter(
 			torch.randn((3 * d_model, d_model)))
-		self.w_o = torch.nn.Parameter(
+		self.W_o = torch.nn.Parameter(
 			torch.randn((d_model, d_model)))
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -43,8 +43,8 @@ class CustomMHA(torch.nn.Module):
 			y: A tensor of the same size as x which has had
 			   multi-head attention computed for each batch entry.
 		"""
-		x = x.to(self.w_qkv.dtype)
-		t = torch.matmul(x, self.w_qkv.T) # Shape: (B, S, 3D)
+		x = x.to(self.W_qkv.dtype)
+		t = torch.matmul(x, self.W_qkv.T) # Shape: (B, S, 3D)
 
 		d_h = int(self.d_model / self.n_heads)
 		batch_size, seq_length = x.shape[0], x.shape[1]
@@ -70,7 +70,7 @@ class CustomMHA(torch.nn.Module):
 		) # Shape: (B, S, H, D/H)
 		y_prime = y_prime.reshape(
 			batch_size, seq_length, -1) # Shape: (B, S, D)
-		y = torch.matmul(y_prime, self.w_o.T) # Shape: (B, S, D)
+		y = torch.matmul(y_prime, self.W_o.T) # Shape: (B, S, D)
 		return y
 
 if __name__ == '__main__':
