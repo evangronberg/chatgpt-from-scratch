@@ -8,7 +8,8 @@ import torch
 Complete this module such that it computes queries, keys, and values,
 computes attention, and passes through a final linear operation W_o.
 
-You should also make sure that a causal mask is applied to the attention mechanism.
+You do NOT need to apply a causal mask (we will do that next week).
+If you don't know what that is, don't worry, we will cover it next lecture.
 
 Be careful with your tensor shapes! Print them out and try feeding data through
 your model. Make sure it behaves as you would expect.
@@ -48,29 +49,26 @@ class CustomMHA(torch.nn.Module):
 
 		d_h = int(self.d_model / self.n_heads)
 		batch_size, seq_length = x.shape[0], x.shape[1]
-		# TODO: May need to switch this up per v2 slides?
-		q = t[:, :, :self.d_model].reshape(
-			batch_size, seq_length, self.n_heads, d_h)
-		k = t[:, :, self.d_model:2*self.d_model].reshape(
-			batch_size, seq_length, self.n_heads, d_h)
-		v = t[:, :, 2*self.d_model:].reshape(
-			batch_size, seq_length, self.n_heads, d_h)
-
-		# Calculate the term that will get
-		# "softmaxed" by the attention equation
-		softmax_term = torch.tril(
-			torch.matmul(q, k.mT) / math.sqrt(self.d_model))
-		# Replace the zeros produced by the masking above
-		# with negative infinities instead (these will go
-		# to 0 when softmax is applied)
-		softmax_term[softmax_term == 0] = -float('inf')
+		# Reshape t to have shape (B, S, 3, D) for the upcoming
+		# split along dim 2 into 3 tensors q, k, and v
+		t_reshaped = t.reshape(
+			batch_size, seq_length, 3, self.d_model)
+		# Perform the aforementioned split via the `chunk()` method
+		t_split = t_reshaped.chunk(3, dim=2)
+		# For each of the three chunks resulting from the split, squeeze
+		# out dim 2 which has a magnitude of only 1, then reshape the
+		# chunk into the desired size for q, k, and v: (B, H, S, D/H)
+		q, k, v = [vector.squeeze(2).reshape(
+			batch_size, self.n_heads, seq_length, d_h)
+			for vector in t_split
+		]
 		# This is the attention equation
-		y_prime = torch.matmul(
-			torch.softmax(softmax_term, dim=-1), v
-		) # Shape: (B, S, H, D/H)
-		y_prime = y_prime.reshape(
+		y_prime = torch.matmul(torch.softmax(
+			torch.matmul(q, k.mT) / math.sqrt(self.d_model),
+		dim=-1), v) # Shape: (B, H, S, D/H)
+		y_prime_reshaped = y_prime.transpose(1, 2).reshape(
 			batch_size, seq_length, -1) # Shape: (B, S, D)
-		y = torch.matmul(y_prime, self.W_o.T) # Shape: (B, S, D)
+		y = torch.matmul(y_prime_reshaped, self.W_o.T) # Shape: (B, S, D)
 		return y
 
 if __name__ == '__main__':

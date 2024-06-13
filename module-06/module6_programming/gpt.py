@@ -6,19 +6,6 @@ from mha import CustomMHA
 from linear import CustomLinear
 from embedding import CustomEmbedding
 
-"""
-Complete this module which handles a single "block" of our model
-as described in our lecture. You should have two sections with
-residual connections around them:
-
-1) norm1, mha
-2) norm2, a two-layer MLP, dropout
-
-It is perfectly fine to use PyTorch implementations of layer norm
-and dropout, as well as activation functions (torch.nn.LayerNorm,
-torch.nn.Dropout, torch.nn.ReLU).
-"""
-
 class TransformerDecoderBlock(torch.nn.Module):
 	"""
 	A transformer's decoder block, here used as the

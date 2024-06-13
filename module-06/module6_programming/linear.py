@@ -1,12 +1,6 @@
 # External dependencies
 import torch
 
-"""
-Complete this class by instantiating parameters called `self.weight` and
-`self.bias`, and use them to complete the `forward()` method. You do not
-need to worry about backpropogation.
-"""
-
 class CustomLinear(torch.nn.Module):
 	"""
 	A custom PyTorch layer that implements the following equation:
