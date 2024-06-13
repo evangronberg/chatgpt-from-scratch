@@ -56,10 +56,18 @@ class CustomMHA(torch.nn.Module):
 		v = t[:, :, 2*self.d_model:].reshape(
 			batch_size, seq_length, self.n_heads, d_h)
 
+		# Calculate the term that will get
+		# "softmaxed" by the attention equation
+		softmax_term = torch.tril(
+			torch.matmul(q, k.mT) / math.sqrt(self.d_model))
+		# Replace the zeros produced by the masking above
+		# with negative infinities instead (these will go
+		# to 0 when softmax is applied)
+		softmax_term[softmax_term == 0] = -float('inf')
 		# This is the attention equation
-		y_prime = torch.matmul(torch.softmax(
-			torch.tril(torch.matmul(q, k.mT) / math.sqrt(self.d_model)),
-		dim=-1), v) # Shape: (B, S, H, D/H)
+		y_prime = torch.matmul(
+			torch.softmax(softmax_term, dim=-1), v
+		) # Shape: (B, S, H, D/H)
 		y_prime = y_prime.reshape(
 			batch_size, seq_length, -1) # Shape: (B, S, D)
 		y = torch.matmul(y_prime, self.w_o.T) # Shape: (B, S, D)
