@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	x = tok.encode('Peter piper picked a peck of pickled peppers.')
 	x = torch.tensor(x)
 
-	embedder = CustomEmbedding(num_embeddings=1000, embedding_dim=100)
+	embedder = CustomEmbedding(num_embeddings=len(tok.vocab), embedding_dim=100)
 	y = embedder(x)
 	print(y)
 	print(y.shape)

@@ -81,17 +81,15 @@ def split_corpus_into_characters(corpus: str) -> List[str]:
     """
     corpus_characters = []
     prev_character_was_space = False
-    for character_index, character in enumerate(corpus):
-        if prev_character_was_space:
-            prev_character_was_space = False
+    for character in corpus:
+        if character == ' ':
+            prev_character_was_space = True
             continue
-        if character != ' ':
-            corpus_characters.append(character)
+        if prev_character_was_space:
+            corpus_characters.append(' ' + character)
             prev_character_was_space = False
         else:
-            corpus_characters.append(
-                character + corpus[character_index + 1])
-            prev_character_was_space = True
+            corpus_characters.append(character)
     return corpus_characters
 
 def initialize_vocabulary(base_vocab: str) -> List[str]:
@@ -181,7 +179,7 @@ def update_corpus_tokens_with_pair(
     """
     prev_token_was_pair = False
     updated_corpus_tokens = []
-    for token_index in range(len(corpus_tokens)):
+    for token_index in range(len(corpus_tokens) - 1):
         if prev_token_was_pair:
             prev_token_was_pair = False
             continue

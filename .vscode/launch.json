@@ -89,7 +89,7 @@
             "name": "Final Project Debug",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/final-project/code/train_model.py",
+            "program": "${workspaceFolder}/final-project/code/rope.py",
             "cwd": "${workspaceFolder}/final-project/code",
             "console": "integratedTerminal",
             "justMyCode": true
