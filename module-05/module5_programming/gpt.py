@@ -17,6 +17,9 @@ residual connections around them:
 It is perfectly fine to use PyTorch implementations of layer norm
 and dropout, as well as activation functions (torch.nn.LayerNorm,
 torch.nn.Dropout, torch.nn.ReLU).
+
+For layer norm, you just need to pass in
+D-model: self.norm1 = torch.nn.LayerNorm((d_model,))
 """
 
 class TransformerDecoderBlock(torch.nn.Module):
@@ -126,3 +129,6 @@ if __name__ == '__main__':
 	sequence_length = 48
 	x = torch.randint(1000, (batch_size, sequence_length))
 	y = model(x)
+
+	# Should be size (batch_size, sequence_length, 1000)
+	print(y.shape)

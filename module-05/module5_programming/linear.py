@@ -15,7 +15,7 @@ class CustomLinear(torch.nn.Module):
 		super().__init__()
 
 		self.weight = torch.nn.Parameter(
-			0.1 * torch.randn((output_size, input_size)))
+			0.01 * torch.randn((output_size, input_size)))
 		self.bias = torch.nn.Parameter(
 			torch.zeros(output_size))
 

@@ -50,7 +50,16 @@
             "justMyCode": true
         },
         {
-            "name": "Module 5 Debug",
+            "name": "Module 5 Debug (MHA)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/module-05/module5_programming/mha.py",
+            "cwd": "${workspaceFolder}/module-05/module5_programming",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Module 5 Debug (GPT)",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/module-05/module5_programming/gpt.py",

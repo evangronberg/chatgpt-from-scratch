@@ -14,9 +14,9 @@ class CustomEmbedding(torch.nn.Module):
 	"""
 	def __init__(self, num_embeddings: int, embedding_dim: int) -> None:
 		super().__init__()
-		
+
 		self.weight = torch.nn.Parameter(
-			torch.randn((embedding_dim, num_embeddings)))
+			0.01 * torch.randn((embedding_dim, num_embeddings)))
 
 	def forward(self, x: torch.Tensor) -> torch.Tensor:
 		"""
