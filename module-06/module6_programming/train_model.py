@@ -44,6 +44,7 @@ def train() -> None:
     Return Values:
         None (saves model/loss curve)
     """
+    # NOTE: Current settings take 12 hrs on M1 Pro
     d_model = 256
     n_heads = 8
     layers = 4
@@ -76,7 +77,7 @@ def train() -> None:
         sequences_dataset, batch_size=microbatch_size)
 
     loss_function = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.AdamW(model.parameters())
 
     batch_count, batch_loss_sum, batch_losses = 0, 0.0, []
     for microbatch_index, microbatch in tqdm(

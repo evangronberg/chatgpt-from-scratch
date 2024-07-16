@@ -14,7 +14,7 @@ def construct_dataset(
     """
     Uses the trained tokenizer to convert samples to token IDs then pack them
     into a training set represented as a NumPy array of size (n_sequences,
-    sequence_length). This array is shuffled then saved to the file system
+    sequence_length + 1). This array is shuffled then saved to the file system
     using NumPy's np.save() method.
 
     Arguments:
