@@ -44,16 +44,14 @@ def train() -> None:
     Return Values:
         None (saves model/loss curve)
     """
-    # NOTE: Current settings take 12 hrs on M1 Pro
+    # NOTE: Current settings take 6.5 hrs on M1 Pro
     d_model = 256
     n_heads = 8
-    layers = 4
+    layers = 8
     vocab_size = 10000
     max_seq_len = 256
-
     batch_size = 32
-    microbatch_size = 8
-    batch_count_loss_print = 100
+    loss_check_cadence = 100
 
     if torch.cuda.is_available():
         device = torch.device('cuda')
@@ -74,38 +72,47 @@ def train() -> None:
     sequences = torch.tensor(sequences)
     sequences_dataset = TensorDataset(sequences)
     sequences_loader = DataLoader(
-        sequences_dataset, batch_size=microbatch_size)
+        sequences_dataset, batch_size=batch_size)
+    batch_count = len(sequences_loader)
 
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters())
+    scheduler = cosine_with_warmup_lr_scheduler(
+        optimizer, total_steps=batch_count, warmup_steps=0.01*batch_count)
 
-    batch_count, batch_loss_sum, batch_losses = 0, 0.0, []
-    for microbatch_index, microbatch in tqdm(
-        enumerate(sequences_loader), total=len(sequences_loader)
-    ):
-        input = microbatch[0][:, :255].to(device)
-        target = microbatch[0][:, 1:].to(device)
-        prediction = model(input)
+    loss_avgs, loss_sum = [], 0.0
+    for batch_index, batch in tqdm(enumerate(sequences_loader), total=batch_count):
+        optimizer.zero_grad()
+        input = batch[0][:, :255].to(device)
+        target = batch[0][:, 1:].to(device)
+        prediction = model(input).transpose(1, 2)
         target = torch.nn.functional.one_hot(
             target, num_classes=vocab_size
-        ).to(prediction.dtype)
+        ).to(prediction.dtype).transpose(1, 2)
         loss = loss_function(prediction, target)
+        loss_sum += loss
         loss.backward()
-        batch_loss_sum += float(loss)
-        if (microbatch_index + 1) % (batch_size / microbatch_size) == 0:
-            optimizer.step()
-            optimizer.zero_grad()
-            batch_loss = batch_loss_sum / batch_size
-            batch_losses.append(batch_loss)
-            if (batch_count + 1) % batch_count_loss_print == 0:
-                print(f'BATCH {batch_count + 1} LOSS: {batch_loss}')
-                plt.plot(batch_losses)
-                plt.savefig('./training_loss.png')
-                plt.clf()
-            batch_loss_sum = 0.0
-            batch_count += 1
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        scheduler.step()
+        if (batch_index + 1) % loss_check_cadence == 0:
+            loss_avg = float(loss_sum / loss_check_cadence)
+            loss_avgs.append(loss_avg)
+            loss_sum = 0.0
+            print(f'AVERAGE LOSS FOR LAST {loss_check_cadence} BATCHES AT '
+                  f'BATCH #{batch_index + 1}: {loss_avg}')
+            plt.plot(loss_avgs)
+            plt.xlabel(f'Token {loss_check_cadence}-Batch Counts '
+                       f'(Batch Size of {batch_size})')
+            plt.ylabel('Cross Entropy Loss')
+            plt.title('Training Loss Curve')
+            plt.savefig('./training_loss.png')
+            plt.clf()
 
-    plt.plot(batch_losses)
+    plt.plot(loss_avgs)
+    plt.xlabel(f'Token 100-Batch Counts (Batch Size of {batch_size})')
+    plt.ylabel('Cross Entropy Loss')
+    plt.title('Training Loss Curve')
     plt.savefig('./training_loss.png')
     torch.save(model.state_dict(), './model_weights.pt')
 
