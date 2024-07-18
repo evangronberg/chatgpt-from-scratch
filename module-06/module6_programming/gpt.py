@@ -1,105 +1,143 @@
-# External dependencies
 import torch
+import math
 
-# Internal dependencies
-from mha import CustomMHA
-from linear import CustomLinear
-from embedding import CustomEmbedding
+class CustomLinear(torch.nn.Module):
+
+	def __init__(self, input_size, output_size):
+		super().__init__()
+		self.weight = torch.nn.Parameter(0.01*torch.randn((output_size, input_size)))
+		self.bias = torch.nn.Parameter(torch.zeros((output_size,)))
+
+	def forward(self, x):
+		return x @ self.weight.T + self.bias
+
+
+class CustomEmbedding(torch.nn.Module):
+
+	def __init__(self, num_embeddings, embedding_dim):
+		super().__init__()
+		self.weight = torch.nn.Parameter(0.01*torch.randn((num_embeddings, embedding_dim)))
+
+	def forward(self, x):
+		return self.weight[x]
+
+
+class CustomMHA(torch.nn.Module):
+
+	def __init__(self, d_model, n_heads):
+		super().__init__()
+		self.d_model = d_model
+		self.n_heads = n_heads
+		self.qkv = torch.nn.Parameter(0.01*torch.randn((3*d_model, d_model)))
+		self.wo = torch.nn.Parameter(0.01*torch.randn((d_model, d_model)))
+
+	def forward(self, x):
+		added_batch = False
+		if len(x.shape) == 2:
+			added_batch = True
+			x = x[None,:,:]
+
+		# queries, keys, and values
+		B, S, D = x.shape
+		QKV = x @ self.qkv.T # B, S, 3D
+		Q, K, V = torch.chunk(QKV, 3, -1)
+
+		# split into multiple heads
+		dh = D//self.n_heads
+		q_heads = torch.reshape(Q, (B, S, self.n_heads, dh))
+		k_heads = torch.reshape(K, (B, S, self.n_heads, dh))
+		v_heads = torch.reshape(V, (B, S, self.n_heads, dh))
+
+		# reshape into (B*h, S, dh) so we isolate sequences for each head
+		q_heads = torch.transpose(q_heads, 1, 2).reshape((B*self.n_heads, S, dh))
+		k_heads = torch.transpose(k_heads, 1, 2).reshape((B*self.n_heads, S, dh))
+		v_heads = torch.transpose(v_heads, 1, 2).reshape((B*self.n_heads, S, dh))
+
+		# make attention mask
+		mask = torch.ones((S,S))
+		mask = torch.tril(mask)
+		mask = mask[None, :, :]
+		mask = mask.to(x.device)
+
+		# attention
+		k_heads_t = torch.transpose(k_heads, 1, 2)
+		qkt = torch.matmul(q_heads, k_heads_t) / math.sqrt(float(dh))
+		qkt = qkt*mask
+		qkt[qkt==0] = float('-inf')
+		attn = torch.nn.functional.softmax(qkt, dim=-1)
+		x = torch.matmul(attn, v_heads)
+
+		# shmush back into the correct shape
+		x = torch.reshape(x, (B, self.n_heads, S, dh))
+		x = torch.transpose(x, 1, 2) # B, S, h, dh
+		x = torch.reshape(x, (B, S, D))
+
+		# apply projection
+		x = x @ self.wo.T
+
+		if added_batch:
+			x = x[0]
+
+		return x
+
 
 class TransformerDecoderBlock(torch.nn.Module):
-	"""
-	A transformer's decoder block, here used as the
-	foundational component of a GPT language model.
 
-	Arguments:
-		d_model: The length of vectors used in this model.
-		n_heads: The number of attention heads. You can assume that
-				 this evenly divides d_model.
-	"""
-	def __init__(self, d_model: int, n_heads: int) -> None:
+	def __init__(self, d_model, n_heads):
 		super().__init__()
+		self.norm1 = torch.nn.LayerNorm((d_model,))
+		self.mha = CustomMHA(d_model, n_heads)
+		self.norm2 = torch.nn.LayerNorm((d_model,))
+		self.fc1 = CustomLinear(d_model, 4*d_model)
+		self.act = torch.nn.ReLU()
+		self.fc2 = CustomLinear(4*d_model, d_model)
+		self.dropout = torch.nn.Dropout(0.1)
 
-		self.mha_component = torch.nn.Sequential(
-			torch.nn.LayerNorm(d_model),
-			CustomMHA(d_model, n_heads)
-		)
-		self.mlp_component = torch.nn.Sequential(
-			torch.nn.LayerNorm(d_model),
-			CustomLinear(d_model, 4 * d_model),
-			torch.nn.ReLU(),
-			CustomLinear(4 * d_model, d_model),
-			torch.nn.Dropout(0.1)
-		)
-
-	def forward(self, x: torch.Tensor) -> torch.Tensor:
-		"""
-		Forward propagates the input through the block.
-
-		Arguments:
-			x: A tensor of size (batch_size, sequence_length, d_model)
-			   returns the computed output of the block with the same size.
-		Return Values:
-			y: Output tensor of the transformer block.
-		"""
-		y_mha_component = self.mha_component(x)
-		x_mlp_component = x + y_mha_component
-		y_mlp_component = self.mlp_component(x_mlp_component) 
-		y = x_mlp_component + y_mlp_component
-		return y
-
-"""
-Create a full GPT model which has two embeddings (token and position),
-and then has a series of transformer block instances. Finally, the last 
-layer should project outputs to size [vocab_size].
-"""
+	def forward(self, x):
+		x = x + self.mha(self.norm1(x))
+		x = x + self.dropout(self.fc2(self.act(self.fc1(self.norm2(x)))))
+		return x
+		
 
 class GPTModel(torch.nn.Module):
-	"""
-	A full GPT model that takes in a sequence of tokens represented
-	by their token IDs and outputs a probability distribution
-	across all possible next tokens.
 
-	Arguments:
-		d_model:     The size of embedding vectors and throughout the model
-		n_heads:     The number of attention heads, evenly divides d_model
-		layers:      The number of transformer decoder blocks
-		vocab_size:  The final output vector size
-		max_seq_len: The longest sequence the model can process. This is used
-		             to create the position embedding (i.e., the highes
-					 possible position to embed is max_seq_len).
-	"""
-	def __init__(
-		self, d_model: int, n_heads: int, layers: int,
-		vocab_size: int, max_seq_len: int
-	) -> None:
+	def __init__(self, d_model, n_heads, layers, vocab_size, max_seq_len):
 		super().__init__()
 
-		self.token_embedding = CustomEmbedding(vocab_size, d_model)
-		self.position_embedding = CustomEmbedding(max_seq_len, d_model)
+		self.word_embeddings = CustomEmbedding(vocab_size, d_model)
+		self.position_embeddings = CustomEmbedding(max_seq_len, d_model)
 
-		self.transformer_blocks = torch.nn.Sequential(*[
-			TransformerDecoderBlock(d_model, n_heads) for _ in range(layers)
-		])
-		self.output_layer = CustomLinear(d_model, vocab_size)
+		self.layers = torch.nn.ModuleList()
+		for i in range(layers):
+			block = TransformerDecoderBlock(d_model, n_heads)
+			self.layers.append(block)
 
-	def forward(self, x: torch.Tensor) -> torch.Tensor:
-		"""
-		Forward propagates the input through the model.
+		self.fc_out = CustomLinear(d_model, vocab_size)
 
-		Arguments:
-			x: An input of size (batch_size, sequence_length) which
-			   is filled with token IDs.
-		Return Values:
-			y: A tensor of size (batch_size, vocab_size) containing
-			   the raw logits for the output.
-		"""
-		y_token_embedding = self.token_embedding(x)
-		x_position_embedding = torch.arange(x.shape[1]).expand(
-			x.shape[0], x.shape[1]).to(next(self.parameters()).device)
-		y_position_embedding = self.position_embedding(x_position_embedding)
-		y = y_token_embedding + y_position_embedding
+	def forward(self, x):
+		B, S = x.shape
+		positions = torch.arange(S).to(torch.long).to(x.device)
+		positions = positions[None, :]
+		positions = positions.repeat(B, 1)
 
-		y = self.transformer_blocks(y)
+		w_emb = self.word_embeddings(x)
+		p_emb = self.position_embeddings(positions)
+		x = w_emb + p_emb
 
-		y = torch.softmax(self.output_layer(y), dim=-1)
-		return y
+		for layer in self.layers:
+			x = layer(x)
+
+		logits = self.fc_out(x)
+
+		return logits
+
+
+
+
+if __name__ == "__main__":
+
+	model = GPTModel(128, 8, 4, 1000, 512)
+	B = 32
+	S = 48
+	x = torch.randint(1000, (B, S))
+	y = model(x)
