@@ -14,7 +14,7 @@ Note this will download about 550MB of parameter data so you can run gpt2.
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from sampler import Sampler
 
-samp = Sampler()
+samp = Sampler(top_k=5)
 
 # download gpt2 and the associated tokenizer
 tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
