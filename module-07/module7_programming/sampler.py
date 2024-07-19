@@ -62,7 +62,7 @@ class Sampler:
 				                 These are "unsorted" in the sense that their
 								 order aligns with vocabulary order, not with
 								 probability.
-			previous_token_ids:  A one dimensional list of ids representing the
+			previous_token_ids:  A one-dimensional list of IDs representing the
 			                     previous tokens, for calculating repetition
 								 penalties.
 		Return Values:
@@ -111,9 +111,10 @@ class Sampler:
 
 if __name__ == '__main__':
 
-	sampler = Sampler(top_p=0.8, frequency_penalty=1.1, presence_penalty=1.1)
+	# sampler = Sampler(top_p=0.8, frequency_penalty=1.1, presence_penalty=1.1)
+	sampler = Sampler(top_k=5, frequency_penalty=1.1, presence_penalty=1.1)
 
-	sequence = [1,2,3,4,5]
+	sequence = [1, 2, 3, 4, 5]
 
 	for i in range(10):
 		# Fake logits for a vocab of size 500

@@ -44,10 +44,10 @@ def train() -> None:
     Return Values:
         None (saves model/loss curve)
     """
-    # NOTE: Current settings take 6.5 hrs on M1 Pro
+    # THESE ARE THE TRAINING HYPERPARAMETERS/SETTINGS
     d_model = 256
     n_heads = 8
-    layers = 8
+    layers = 4
     vocab_size = 10000
     max_seq_len = 256
     batch_size = 32
