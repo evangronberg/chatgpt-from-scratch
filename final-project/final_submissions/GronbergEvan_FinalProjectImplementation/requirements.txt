@@ -1,0 +1,8 @@
+tqdm
+peft
+torch
+pandas
+seaborn
+jupyter
+datasets
+transformers
