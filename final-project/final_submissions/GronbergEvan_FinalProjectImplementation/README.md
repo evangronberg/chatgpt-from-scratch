@@ -16,3 +16,5 @@ pip install -r requirements.txt
 From there, you can select the virtual environment as your notebook's kernel and forgo the `pip install` command in the notebook.
 
 Note that running this code on your own is highly contingent upon the ready availability of a robust GPU.
+
+Also note that the two data sources for the notebook, `bible.txt` and `bible_qa_pairs.csv`, are included in this directory and require no installation or otherwise extra steps.
