@@ -1,6 +1,6 @@
 # Fine-Tuning on Pre-Training Data: A Model Comparison
 
-The code for this project is entirely contained with the `main.ipynb` notebook. A notebook was chosen (as opposed to a `.py` file) because this project was run on Google Colab to take advantage of cloud GPU (which was very necessary for a fine-tuning project). The notebook annotates the code at length, so in the interest of giving the grader less to read, please see the notebook for explanations of the code.
+The code for this project is entirely contained with the `main.ipynb` notebook. A notebook was chosen (as opposed to a `.py` file) because this project was run on Google Colab to take advantage of cloud GPU (which was very necessary for a fine-tuning project). The notebook annotates the code at length; please see the notebook for explanations of the code.
 
 ## Installation
 
